@@ -9,6 +9,7 @@
 **Fecha de entrega:** Domingo, 08 de octubre de 2017  
 **Estudiante:** Juan Camilo Swan  
 **Código:** A00054620  
+**URL:** https://github.com/juanswan13/so-exam1
 
 
 ### Objetivos
@@ -94,8 +95,25 @@ Para demostrar que mi proceso anteriomente descrito se encuentra bien, a continu
 | ![][13] | ![][14] | ![][15] |
   
  
-**5.** 
+**5.** En este punto del presente parcial se pide explicar el código del repositorio de github https://github.com/jvns/kernel-module-fun. Así que procederé con la explicación general de lo que hace dicho código.  
   
+El código se encarga de que todo archivo mp3 que se quiera ejecutar sea reemplazado por la canción Never Gonna Give You Up de Rick Astley. Ahora bien, ¿cómo logramos esto mediante un algoritmo? Pues la respuesta la vamos a encontrar explicando y analizando a fondo el código. 
+Como es un algoritmo escrito en lenguaje C, primero se debe incluir todos los modulos necesarios para que el código funcione; es decir, poder crear variables, y acceder a bloques de memoria del sistema operativo.  
+![][16]  
+Después se crean todas las variables que se van a utilizar en la ejecución del código, como por ejemplo la variable donde se almacena la ruta de la canción Never Gonna Give You Up, las variables donde se almacenan punteros a la tabla de sys_call o al método original para el sys_open. Además de esto también se crean definen dos modificaciones a un registro del sistema operativo (DISABLE_WRITE_PROTECTION y ENABLE_WRITE_PROTECTION). Lo que ocurre es que posteriormente el algoritmo va a editar la tabla de llamados al sistema que está protegida por el registro cr0, así que lo que hacemos es apagar la protección de cr0, modificar la tabla de llamados al sistema y encender de nuevo la protección, por este motivo se definen estos dos ediciones al registro cr0.  
+![][17]  
+Hasta ahora el algoritmo no ha ejecutado nada. Pero cuando este es ejecutado lo que se ejecuta es lo que hace parte del init, que en este casi esta llamado rickroll_init. Aquí es donde se lleva a cabo toda la lógica del código. Primero y antes de modificar cualquier cosa se debe cerciorar de no cometer ningún error (ya que puede ocasionar daños en el sistema operativo) por este motivo primero verifica que la variable con la ruta de la canción de Rick Astley sea una ruta valida, de lo contrario el algoritmo no se ejecuta y termina con señal de error ‘invalid argument’.  
+Después de que se ha verificado la ruta llama al método find_sys_call_table() que obtiene la tabla de llamadas al sistema y la almacena en la variable sys_call_table, para evitar problemas verifica que la tabla si se haya almacenado en la variable correctamente; de lo contrario el programa termina con mensaje de error ‘operatio not permitted; couldn’t find general error’. De lo contrario el programa continua, lo siguiente que realiza es  deshabilitar la protección contra escritura de la tabla de llamadas al sistema, obtiene el algoritmo encargado de abrir archivos y lo almacena en la varialbe original_sys_open, modifica el puntero de abrir archivos en la tabla de llamados al sistema para que en vez de apuntar al original_sys_open; apunte al método creado por nosotros llamado rickroll_open, y por ultimo vuelve y habilita la protección contra escritura y retorna 0 lo que significa que no hubo ningún error.  
+![][18]  
+Cambiando el puntero en la tabla de llamadas al sistema se logra que cuando se quiera abrir algún archivo cualquiera, no se ejecute el algoritmo por defecto que abre los archivos sino que se ejecute el algoritmo al cual estamos apuntando, en este caso el algoritmo encargado de cambiar todos los .mp3 por la canción de Rick Astley.  
+  
+Una vez todo lo anterior ha funcionado correctamente,  cuando se abra algún archivo cualquiera se va a ejecutar el método creado por nosotros llamado rickroll_open y este lo que hace es identificar la extención del archivo que se esta intentando abrir, si no es un archivo que termine en .mp3 entonces lo que hace es que realiza un llamado a la función original_sys_open y como parametro pasa el archivo que se estaba intentando abrir(de este modo si se quiere abrir un archivo que no es un mp3 entonces se puede abrir de forma normal). Pero si el archivo que se quiere abrir resulta terminar en .mp3, se realiza el llamado a la función original_sys_open pero como parametro no se pasa el archivo que se desea abrir sino la ruta donde se encuentra la canción Never Gonna Give You Up, de esta forma todo archivo mp3 que se intente abrir no se abrirá y en su lugar si lo hará la cancion de Rick Astley.  
+  
+![][19]  
+![][20]   
+
+Por último tenemos el rickroll_cleanup que lo realiza al exit con esto se deja la tabla de llamadas al sistema tal y como estaba antes de realizar los cambios de punteros. El proposito de esto es brindarle estabilidad al sistema operativo, si no se ejecutara esta parte entonces la broma del rickroll quedaria para siempre y ya no se podria escuchar ningun mp3. Lo que hace esta parte del código es deshabilitar la protección contra escritura de la tabla de llamadas al sistema, volver a poner el puntero NR_OPEN al método original original_sys_open y por ultimo habilitar la protección contra escritura. Esta parte del código se ejecuta con el fin de que al terminar la broma todo vuelva a la normalidad.
+![][21]  
   
 
 
@@ -109,6 +127,9 @@ Para demostrar que mi proceso anteriomente descrito se encuentra bien, a continu
 * http://man7.org/linux/man-pages/man1/column.1.html
 * https://www.computerhope.com/unix/wget.htm
 * https://www.computerhope.com/unix/ucrontab.htm
+* https://stackoverflow.com/questions/10459688/what-is-the-asmlinkage-modifier-meant-for
+* http://www.tldp.org/LDP/lkmpg/2.4/html/x939.html
+* https://groups.google.com/forum/#!topic/alt.os.development/kFUUXrG60cc
 
 [1]: images/Reto1.PNG
 [2]: images/Reto1Centos.PNG
@@ -125,4 +146,10 @@ Para demostrar que mi proceso anteriomente descrito se encuentra bien, a continu
 [13]: images/Punto4.PNG
 [14]: images/Punto4Reporte.PNG
 [15]: images/Punto4Correo.PNG
+[16]: images/P5includes.PNG
+[17]: images/P5Variables.PNG
+[18]: images/p5init.PNG
+[19]: images/P5rickroll1.PNG
+[20]: images/P5rickroll2.PNG
+[21]: images/P5exit.PNG
 
